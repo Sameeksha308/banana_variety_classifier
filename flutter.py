@@ -9,6 +9,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)  # Enable CORS for Flutter Web
 
+# Folder to save uploaded images
 UPLOAD_FOLDER = 'static/uploaded'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -22,7 +23,7 @@ with open("model/class_indices.json", "r") as f:
 
 class_names = list(class_indices.keys())
 image_size = (150, 150)
-threshold = 0.7  # Confidence threshold for classification
+threshold = 0.7  # Minimum confidence for valid classification
 
 @app.route('/')
 def home():
@@ -40,10 +41,12 @@ def classify():
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
     file.save(filepath)
 
+    # Preprocess image
     img = load_img(filepath, target_size=image_size)
     img = img_to_array(img) / 255.0
     img = np.expand_dims(img, axis=0)
 
+    # Predict
     predictions = model.predict(img)
     confidence = float(np.max(predictions))
     predicted_class = class_names[np.argmax(predictions)]
