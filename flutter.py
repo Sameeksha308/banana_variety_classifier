@@ -1,10 +1,9 @@
-from flask import Flask, request, jsonify, Response, url_for
+from flask import Flask, request, jsonify, url_for
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 import numpy as np
 import os
 import json
-import cv2
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -62,54 +61,5 @@ def classify():
         "image_url": url_for('static', filename='uploaded/' + file.filename)
     })
 
-@app.route('/video_feed')
-def video_feed():
-    return Response(generate_frames(),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
-
-def generate_frames():
-    cap = cv2.VideoCapture(0)
-
-    while True:
-        success, frame = cap.read()
-        if not success:
-            break
-
-        h, w, _ = frame.shape
-        box_size = 200
-        x1 = w // 2 - box_size // 2
-        y1 = h // 2 - box_size // 2
-        x2 = x1 + box_size
-        y2 = y1 + box_size
-        roi = frame[y1:y2, x1:x2]
-
-        img = cv2.resize(roi, image_size)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img = img.astype("float32") / 255.0
-        img = np.expand_dims(img, axis=0)
-
-        predictions = model.predict(img)
-        confidence = np.max(predictions)
-
-        if confidence < threshold:
-            label = "No banana detected"
-            color = (0, 0, 255)  # Red color
-        else:
-            predicted_class = class_names[np.argmax(predictions)]
-            label = f"{predicted_class}: {confidence * 100:.2f}%"
-            color = (0, 255, 0)  # Green color
-
-        cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-        cv2.putText(frame, label, (x1, y1 - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
-
-        ret, buffer = cv2.imencode('.jpg', frame)
-        frame = buffer.tobytes()
-
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-
-    cap.release()
-
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000)
