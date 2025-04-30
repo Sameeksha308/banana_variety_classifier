@@ -3,8 +3,7 @@ services:
     name: banana-flask-api
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn flutter:app  # This is incorrect for Flask. Update below
+    startCommand: gunicorn flutter:app  # Correct the app name
     envVars:
       - key: FLASK_ENV
         value: production
-
